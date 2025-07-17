@@ -2087,9 +2087,8 @@
         };
 
         // --- COMPONENTI REACT PER LA CHAT UTENTE-UTENTE ---
-                        // --- COMPONENTI REACT PER LA CHAT UTENTE-UTENTE ---
         const UserChatApp = ({ currentUser, onOpenDetail, lang, globalControlsHTML }) => {
-            // Stato locale per la lingua per consentire l'aggiornamento in tempo reale
+            // **NUOVO:** Stato locale per la lingua per consentire l'aggiornamento in tempo reale
             const [language, setLanguage] = useState(lang);
 
             const [view, setView] = useState('list'); // 'list' | 'chat' | 'search'
@@ -2099,169 +2098,9 @@
             const [messages, setMessages] = useState([]);
             const [messageInput, setMessageInput] = useState('');
             const [isLoading, setIsLoading] = useState(false);
-            const [chatSearchTerm, setChatSearchTerm] = useState('');
+            const [chatSearchTerm, setChatSearchTerm] = useState(''); // NUOVO STATO PER LA RICERCA
             const messagesEndRef = useRef(null);
-            
-            // Gestore per visualizzare i suggerimenti
-            const handleViewSuggestions = (e, userId, userNickname) => {
-                e.stopPropagation(); // Impedisce che l'evento si propaghi e apra la chat
-                window.viewUserSuggestions(userId, userNickname);
-            };
 
-            // Crea un "ponte" per aggiornare la lingua dall'esterno
-            useEffect(() => {
-                window.updateUserChatLanguage = (newLang) => {
-                    setLanguage(newLang);
-                };
-                return () => { delete window.updateUserChatLanguage; };
-            }, []);
-
-            useEffect(() => {
-                if (currentUser.uid) { loadUserChats(); }
-                window.handleReactChatStart = handleStartChat;
-            }, [currentUser.uid]);
-
-            useEffect(() => { if (selectedChatId) { loadChatMessages(selectedChatId); } }, [selectedChatId]);
-            useEffect(() => { messagesEndRef.current?.scrollIntoView({ behavior: "smooth" }); }, [messages]);
-
-            const getHiddenChatIds = () => JSON.parse(localStorage.getItem(`hidden_chats_${currentUser.uid}`) || '[]');
-
-            const handleHideChat = (e, chatId) => {
-                e.stopPropagation();
-                const hiddenIds = getHiddenChatIds();
-                if (!hiddenIds.includes(chatId)) {
-                    const newHiddenIds = [...hiddenIds, chatId];
-                    localStorage.setItem(`hidden_chats_${currentUser.uid}`, JSON.stringify(newHiddenIds));
-                    setChats(prevChats => prevChats.filter(chat => chat.id !== chatId));
-                }
-            };
-
-            const loadUserChats = async () => {
-                try {
-                    const hiddenChatIds = getHiddenChatIds();
-                    const chatsData = await window.getUserChats(currentUser.uid);
-                    const visibleChats = chatsData.filter(chat => !hiddenChatIds.includes(chat.id));
-                    setChats(visibleChats.sort((a, b) => b.lastMessageTime.toMillis() - a.lastMessageTime.toMillis()));
-                } catch (error) { console.error("Error loading user chats:", error); }
-            };
-
-            const loadChatMessages = async (chatId) => {
-                try {
-                    const messagesSnapshot = await window.getChatMessages(chatId);
-                    const messagesData = messagesSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                    setMessages(messagesData.sort((a, b) => a.timestamp.toMillis() - b.timestamp.toMillis()));
-                } catch (error) { console.error("Error loading chat messages:", error); }
-            };
-
-            const handleStartChat = (userId, userNickname) => {
-                const chatId = window.createChatId(currentUser.uid, userId);
-                setSelectedChatId(chatId);
-                setSelectedUser({ uid: userId, nickname: userNickname, suggestions: [] }); // Assume no suggestions initially
-                setView('chat');
-            };
-
-            const handleSelectChat = (chat) => {
-                setSelectedChatId(chat.id);
-                setSelectedUser({ uid: chat.otherUserId, nickname: chat.otherUserNickname, suggestions: chat.otherUserSuggestions });
-                setView('chat');
-            };
-
-            const handleSendMessage = async () => {
-                if (!messageInput.trim() || !selectedChatId || isLoading) return;
-                setIsLoading(true);
-                try {
-                    await window.sendChatMessage(selectedChatId, currentUser.uid, messageInput.trim(), selectedUser.uid);
-                    setMessageInput('');
-                    await loadChatMessages(selectedChatId);
-                    await loadUserChats();
-                } catch (error) { console.error("Error sending message:", error); window.showToast("Errore nell'invio del messaggio");
-                } finally { setIsLoading(false); }
-            };
-
-            const handleKeyPress = (e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSendMessage(); } };
-
-            const formatMessageTime = (timestamp) => {
-                if (timestamp?.toDate) return timestamp.toDate().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-                if (typeof timestamp === 'number') return new Date(timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-                return '...';
-            };
-            
-            if (view === 'list') {
-                const filteredChats = chats.filter(chat => chat.otherUserNickname?.toLowerCase().includes(chatSearchTerm.toLowerCase()));
-                return (
-                    <div className="user-chat-container">
-                        <div className="user-chat-header">
-                            <div id="profile-avatar-menu" style={{ marginLeft: 8 }}><span dangerouslySetInnerHTML={{ __html: globalControlsHTML.avatar }} /></div>
-                            <div className="user-chat-info" style={{ flexGrow: 1 }}><h3>{language === 'it' ? 'Le tue chat' : 'Your chats'}</h3></div>
-                            <div id="global-controls" dangerouslySetInnerHTML={{ __html: globalControlsHTML.otherControls }}></div>
-                        </div>
-                        <div className="chat-search-container">
-                            <input type="text" className="chat-search-input" placeholder={language === 'it' ? 'Cerca per nickname...' : 'Search by nickname...'} value={chatSearchTerm} onChange={(e) => setChatSearchTerm(e.target.value)} />
-                        </div>
-                        <div className="user-chat-list">
-                            {filteredChats.length === 0 ? (<div id="empty-state">{language === 'it' ? 'Nessuna chat trovata.' : 'No chats found.'}</div>) : (
-                                filteredChats.map(chat => (
-                                    <div key={chat.id} className="user-chat-item" onClick={() => handleSelectChat(chat)}>
-                                        {/* MODIFICA: Aggiunto onClick all'avatar */}
-                                        <div className="user-chat-item-avatar" onClick={(e) => handleViewSuggestions(e, chat.otherUserId, chat.otherUserNickname)} title={language === 'it' ? 'Vedi suggerimenti' : 'View suggestions'}>
-                                            {chat.otherUserNickname ? chat.otherUserNickname.charAt(0).toUpperCase() : 'U'}
-                                        </div>
-                                        {/* MODIFICA: Aggiunto onClick all'info e mostrato il conteggio suggerimenti */}
-                                        <div className="user-chat-item-info" onClick={(e) => handleViewSuggestions(e, chat.otherUserId, chat.otherUserNickname)} title={language === 'it' ? 'Vedi suggerimenti' : 'View suggestions'}>
-                                            <div className="user-chat-item-name">{chat.otherUserNickname || 'Utente'}</div>
-                                            <div className="user-chat-item-preview">{`${chat.lastMessage} • ${chat.otherUserSuggestions.length} ${language === 'it' ? 'sugg.' : 'sugg.'}`}</div>
-                                        </div>
-                                        <div className="user-chat-item-meta">
-                                            <div className="user-chat-item-time">{formatMessageTime(chat.lastMessageTime)}</div>
-                                            <button className="user-chat-item-delete-btn" onClick={(e) => handleHideChat(e, chat.id)} title={language === 'it' ? 'Nascondi chat' : 'Hide chat'}>
-                                                <svg xmlns="http://www.w3.org/2000/svg" height="18" viewBox="0 0 24 24" width="18" fill="currentColor"><path d="M0 0h24v24H0z" fill="none"/><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
-                                            </button>
-                                        </div>
-                                    </div>
-                                ))
-                            )}
-                        </div>
-                        <button className="floating-action-btn" onClick={() => setView('search')} title={language === 'it' ? 'Nuova chat' : 'New chat'}>
-                            <svg xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 0 24 24" width="24" fill="currentColor"><path d="M0 0h24v24H0z" fill="none"/><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-5 9h-4v4h-2v-4H5V9h4V5h2v4h4v2z"/></svg>
-                        </button>
-                    </div>
-                );
-            }
-            
-            if (view === 'search') {
-                return (
-                    <div className="user-chat-container">
-                        <div className="user-chat-header">
-                            <button className="user-chat-back-btn" onClick={() => setView('list')}><svg xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 0 24 24" width="24" fill="currentColor"><path d="M0 0h24v24H0z" fill="none"/><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg></button>
-                            <div className="user-chat-info"><h3>{language === 'it' ? 'Nuova Chat' : 'New Chat'}</h3></div>
-                            <div id="global-controls" dangerouslySetInnerHTML={{ __html: globalControlsHTML.otherControls }}></div>
-                        </div>
-                        <div style={{ padding: '16px' }}><input type="text" className="user-chat-input" style={{ borderRadius: '12px', minHeight: 'auto', maxHeight: 'none', lineHeight: '1.5' }} placeholder={language === 'it' ? 'Cerca utente per nickname...' : 'Search user by nickname...'} onInput={(e) => window.searchUsersForChat(e.target.value, currentUser.uid)} autoFocus /></div>
-                        <div id="user-chat-search-results" style={{ padding: '0 16px', overflowY: 'auto', flex: 1 }}></div>
-                    </div>
-                );
-            }
-
-            return (
-                <div className="user-chat-container">
-                    {/* MODIFICA: Aggiunto onClick all'header della chat */}
-                    <div className="user-chat-header" style={{cursor: 'pointer'}} onClick={(e) => handleViewSuggestions(e, selectedUser.uid, selectedUser.nickname)} title={language === 'it' ? 'Vedi suggerimenti' : 'View suggestions'}>
-                        <button className="user-chat-back-btn" onClick={(e) => { e.stopPropagation(); setView('list'); }}><svg xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 0 24 24" width="24" fill="currentColor"><path d="M0 0h24v24H0z" fill="none"/><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg></button>
-                        <div className="user-chat-avatar">{selectedUser?.nickname ? selectedUser.nickname.charAt(0).toUpperCase() : 'U'}</div>
-                        <div className="user-chat-info"><h3>{selectedUser?.nickname || 'Utente'}</h3></div>
-                        <div id="global-controls" dangerouslySetInnerHTML={{ __html: globalControlsHTML.otherControls }} onClick={(e) => e.stopPropagation() /* Evita che il click sui controlli apra i suggerimenti */}></div>
-                    </div>
-                    <div className="user-chat-messages">
-                        {messages.map(message => (<div key={message.id} className={`user-chat-message ${message.senderId === currentUser.uid ? 'sent' : 'received'}`}><div>{message.text}</div><div className="user-chat-message-time">{formatMessageTime(message.timestamp)}</div></div>))}
-                        <div ref={messagesEndRef} />
-                    </div>
-                    <div className="user-chat-input-container">
-                        <textarea className="user-chat-input" value={messageInput} onChange={(e) => setMessageInput(e.target.value)} onKeyDown={handleKeyPress} placeholder={language === 'it' ? 'Scrivi un messaggio...' : 'Write a message...'} disabled={isLoading} />
-                        <button className="user-chat-send-btn" onClick={handleSendMessage} disabled={isLoading || !messageInput.trim()}><svg xmlns="http://www.w3.org/2000/svg" height="18" viewBox="0 0 24 24" width="18" fill="currentColor"><path d="M0 0h24v24H0z" fill="none"/><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg></button>
-                    </div>
-                </div>
-            );
-        };
             // **NUOVO:** Crea un "ponte" per aggiornare la lingua dall'esterno
             useEffect(() => {
                 window.updateUserChatLanguage = (newLang) => {
@@ -2415,12 +2254,17 @@
                                 </div>
                             ) : (
                                 filteredChats.map(chat => (
-                                    <div key={chat.id} className="user-chat-item" onClick={() => handleSelectChat(chat)}>
-                                        <div className="user-chat-item-avatar">
+                                    <div key={chat.id} className="user-chat-item" onClick={(e) => {
+                                        // Prevents chat from opening if a data-action is clicked
+                                        if (!e.target.closest('[data-action="view-user-suggestions"]') && !e.target.closest('.user-chat-item-delete-btn')) {
+                                            handleSelectChat(chat);
+                                        }
+                                    }}>
+                                        <div className="user-chat-item-avatar" data-action="view-user-suggestions" data-uid={chat.otherUserId} data-nickname={chat.otherUserNickname} style={{ cursor: 'pointer' }}>
                                             {chat.otherUserNickname ? chat.otherUserNickname.charAt(0).toUpperCase() : 'U'}
                                         </div>
                                         <div className="user-chat-item-info">
-                                            <div className="user-chat-item-name">{chat.otherUserNickname || 'Utente'}</div>
+                                            <div className="user-chat-item-name" data-action="view-user-suggestions" data-uid={chat.otherUserId} data-nickname={chat.otherUserNickname} style={{ cursor: 'pointer' }}>{chat.otherUserNickname || 'Utente'}</div>
                                             <div className="user-chat-item-preview">{chat.lastMessage}</div>
                                         </div>
                                         <div className="user-chat-item-meta">
@@ -2487,8 +2331,8 @@
                         <button className="user-chat-back-btn" onClick={() => setView('list')}>
                             <svg xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 0 24 24" width="24" fill="currentColor"><path d="M0 0h24v24H0z" fill="none"/><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg>
                         </button>
-                        <div className="user-chat-avatar">{selectedUser?.nickname ? selectedUser.nickname.charAt(0).toUpperCase() : 'U'}</div>
-                        <div className="user-chat-info"><h3>{selectedUser?.nickname || 'Utente'}</h3></div>
+                        <div className="user-chat-avatar" data-action="view-user-suggestions" data-uid={selectedUser?.uid} data-nickname={selectedUser?.nickname} style={{ cursor: 'pointer' }}>{selectedUser?.nickname ? selectedUser.nickname.charAt(0).toUpperCase() : 'U'}</div>
+                        <div className="user-chat-info" data-action="view-user-suggestions" data-uid={selectedUser?.uid} data-nickname={selectedUser?.nickname} style={{ cursor: 'pointer' }}><h3>{selectedUser?.nickname || 'Utente'}</h3></div>
                         <div id="global-controls" dangerouslySetInnerHTML={{ __html: globalControlsHTML.otherControls }}></div>
                     </div>
                     <div className="user-chat-messages">
@@ -2625,29 +2469,20 @@
         const chatsRef = collection(db, 'userChats');
         const q = query(chatsRef, where('participants', 'array-contains', userId));
         const chatsSnapshot = await getDocs(q);
-
-        // NUOVA MODIFICA: Usiamo Promise.all per recuperare i dati dell'altro utente in parallelo
-        const chatPromises = chatsSnapshot.docs.map(async (chatDoc) => {
-            const data = chatDoc.data();
+        
+        const chats = [];
+        chatsSnapshot.forEach(doc => {
+            const data = doc.data();
             const otherUserId = data.participants.find(id => id !== userId);
+            const otherUserNickname = data.participants[0] === userId ? data.user2Nickname : data.user1Nickname;
             
-            if (otherUserId) {
-                const userDocRef = doc(db, "users", otherUserId);
-                const userDocSnap = await getDoc(userDocRef);
-                const otherUserData = userDocSnap.exists() ? userDocSnap.data() : { aiSuggestions: [], nickname: 'Utente Sconosciuto' };
-
-                return {
-                    id: chatDoc.id,
-                    ...data,
-                    otherUserId: otherUserId,
-                    otherUserNickname: otherUserData.nickname || (data.participants[0] === userId ? data.user2Nickname : data.user1Nickname),
-                    otherUserSuggestions: otherUserData.aiSuggestions || [] // Aggiungiamo i suggerimenti dell'altro utente
-                };
-            }
-            return null; // Ritorna null se non c'è un altro utente (improbabile)
+            chats.push({
+                id: doc.id,
+                ...data,
+                otherUserId: otherUserId,
+                otherUserNickname: otherUserNickname
+            });
         });
-
-        const chats = (await Promise.all(chatPromises)).filter(Boolean); // Filtra eventuali risultati null
         
         return chats;
     };
@@ -4752,8 +4587,7 @@
 
         // NEW FUNCTION: View User Suggestions
                 // NEW FUNCTION: Search Users for Chat
-                // NEW FUNCTION: Search Users for Chat
-                const searchUsersForChat = async (searchTerm, currentUserId) => {
+        const searchUsersForChat = async (searchTerm, currentUserId) => {
             const resultsContainer = document.getElementById('user-chat-search-results');
             if (!resultsContainer) return;
 
@@ -4777,7 +4611,6 @@
                             users.push({
                                 uid: doc.id,
                                 nickname: userData.nickname,
-                                aiSuggestions: userData.aiSuggestions || [] // Recuperiamo i suggerimenti
                             });
                         }
                     }
@@ -4788,22 +4621,15 @@
                     return;
                 }
 
-                // Aggiunto il conteggio suggerimenti e il pulsante "Vedi Suggerimenti"
                 resultsContainer.innerHTML = users.slice(0, 10).map(user => `
                     <div class="user-search-result">
-                        <div class="user-info" style="cursor: pointer;" onclick="window.viewUserSuggestions('${user.uid}', '${user.nickname}')" title="${t.viewSuggestions}">
+                        <div class="user-info">
                             <div class="user-nickname">${user.nickname}</div>
-                            <div class="user-suggestions-count">${user.aiSuggestions.length} ${user.aiSuggestions.length === 1 ? t.suggestion : t.suggestions}</div>
                         </div>
-                        <div class="user-actions">
-                             <button class="view-suggestions-btn" onclick="window.viewUserSuggestions('${user.uid}', '${user.nickname}')">
-                                ${t.viewSuggestions}
-                            </button>
-                            <button class="chat-button" onclick="window.handleReactChatStart('${user.uid}', '${user.nickname}')">
-                                <svg xmlns="http://www.w3.org/2000/svg" height="16" viewBox="0 0 24" width="16" fill="currentColor"><path d="M0 0h24v24H0z" fill="none"/><path d="M20 2H4c-1.1 0-1.99.9-1.99 2L2 22l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-2 12H6v-2h12v2zm0-3H6V9h12v2zm0-3H6V6h12v2z"/></svg>
-                                ${t.startChat}
-                            </button>
-                        </div>
+                        <button class="chat-button" onclick="window.handleReactChatStart('${user.uid}', '${user.nickname}')">
+                            <svg xmlns="http://www.w3.org/2000/svg" height="16" viewBox="0 0 24 24" width="16" fill="currentColor"><path d="M0 0h24v24H0z" fill="none"/><path d="M20 2H4c-1.1 0-1.99.9-1.99 2L2 22l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-2 12H6v-2h12v2zm0-3H6V9h12v2zm0-3H6V6h12v2z"/></svg>
+                            ${t.startChat}
+                        </button>
                     </div>
                 `).join('');
 
