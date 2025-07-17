@@ -1435,8 +1435,9 @@
         }
 
         .user-chat-input {
-            flex: 1;
-            padding: 12px 16px;
+    width: 100%;
+    flex: 1 1 auto;
+    padding: 12px 16px;
             border: 1px solid var(--spotify-card);
             border-radius: 20px;
             background: var(--spotify-card);
@@ -1444,7 +1445,6 @@
             font-size: 16px;
             resize: none;
             max-height: 120px;
-            min-height: 44px;
             line-height: 1.4;
             font-family: var(--font-family);
         }
@@ -1603,10 +1603,55 @@
             fill: currentColor;
         }
 
-        .user-actions {
+                .user-actions {
             display: flex;
             align-items: center;
             gap: 8px;
+        }
+
+        .floating-action-btn {
+            position: fixed;
+            bottom: calc(var(--bottom-nav-height) + 16px); /* Si posiziona 16px sopra la barra di navigazione */
+            right: 16px;
+            width: 56px;
+            height: 56px;
+            background-color: var(--spotify-accent);
+            color: #000; /* Colore dell'icona (il +) nero */
+            border-radius: 50%;
+            border: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 28px;
+            font-weight: 500;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            cursor: pointer;
+            z-index: 1001; /* Assicura che sia sopra la lista delle chat */
+            transition: transform 0.2s ease, background-color 0.2s ease;
+        }
+
+        .floating-action-btn:hover {
+            background-color: #1ed760; /* Colore leggermente più chiaro al passaggio del mouse */
+            transform: scale(1.05);
+        }
+
+        .chat-search-container {
+            padding: 0 16px 16px 16px;
+            background-color: var(--spotify-bg);
+        }
+
+        .chat-search-input {
+            width: 100%;
+            padding: 14px 16px;
+            font-size: 16px;
+            background-color: var(--spotify-card);
+            border: 1px solid var(--spotify-card);
+            border-radius: 8px;
+            color: var(--spotify-text);
+        }
+
+        .chat-search-input::placeholder {
+            color: var(--spotify-text-secondary);
         }
 
         .floating-action-btn {
@@ -1758,7 +1803,6 @@
             <button class="nav-btn active" data-page="home"><span class="icon"><svg xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 0 24 24" width="24" fill="currentColor"><path d="M0 0h24v24H0z" fill="none"/><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg></span><span data-translate="navHome">Home</span></button>
             <button class="nav-btn" data-page="top-ai"><span class="icon"><svg xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 0 24 24" width="24" fill="currentColor"><path d="M0 0h24v24H0z" fill="none"/><path d="M5 9.2h3V19H5zM10.6 5h3v14h-3zm5.6 8H19v6h-2.8z"/></svg></span><span data-translate="navTopAI">TOP AI</span></button>
             <button class="nav-btn" data-page="explore"><span class="icon"><svg xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 0 24 24" width="24" fill="currentColor"><path d="M0 0h24v24H0z" fill="none"/><path d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg></span><span data-translate="navSearch">Cerca</span></button>
-            <button class="nav-btn" data-page="search-users"><span class="icon"><svg xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 0 24 24" width="24" fill="currentColor"><path d="M0 0h24v24H0z" fill="none"/><path d="M16 4c0-1.11.89-2 2-2s2 .89 2 2-.89 2-2 2-2-.89-2-2zm4 18v-6h2.5l-2.54-7.63A1.5 1.5 0 0 0 18.54 8H15.46c-.84 0-1.61.5-1.96 1.37L11 18h2v6h7zM12.5 11.5c.83 0 1.5-.67 1.5-1.5s-.67-1.5-1.5-1.5S11 9.17 11 10s.67 1.5 1.5 1.5zM5.5 6c1.11 0 2-.89 2-2s-.89-2-2-2-2 .89-2 2 .89 2 2 2zm2 16v-7H9V9c0-1.1-.9-2-2-2H4c-1.1 0-2 .9-2 2v6h1.5v7h4z"/></svg></span><span data-translate="navSearchUsers">Utenti</span></button>
             <button class="nav-btn" data-page="user-chats"><span class="icon"><svg xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 0 24 24" width="24" fill="currentColor"><path d="M0 0h24v24H0z" fill="none"/><path d="M20 2H4c-1.1 0-1.99.9-1.99 2L2 22l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-2 12H6v-2h12v2zm0-3H6V9h12v2zm0-3H6V6h12v2z"/></svg></span><span data-translate="navUserChats">Chat</span></button>
             <button class="nav-btn" data-page="favorites"><span class="icon"><svg xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 0 24 24" width="24" fill="currentColor"><path d="M0 0h24v24H0z" fill="none"/><path d="M4 6H2v14c0 1.1.9 2 2 2h14v-2H4V6zm16-4H8c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/></svg></span><span data-translate="navLibrary">La tua libreria</span></button>
         </nav>
@@ -2100,6 +2144,7 @@
             const [isLoading, setIsLoading] = useState(false);
             const [chatSearchTerm, setChatSearchTerm] = useState(''); // NUOVO STATO PER LA RICERCA
             const messagesEndRef = useRef(null);
+            const textareaRef = useRef(null); // Aggiunto per l'auto-grow
 
             // **NUOVO:** Crea un "ponte" per aggiornare la lingua dall'esterno
             useEffect(() => {
@@ -2128,6 +2173,15 @@
             useEffect(() => {
                 messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
             }, [messages]);
+
+            // Effetto per l'auto-grow della textarea
+            useEffect(() => {
+                const textarea = textareaRef.current;
+                if (textarea) {
+                    textarea.style.height = 'auto'; // Resetta l'altezza
+                    textarea.style.height = `${textarea.scrollHeight}px`; // Imposta l'altezza in base al contenuto
+                }
+            }, [messageInput]);
 
             const getHiddenChatIds = () => {
                 const hidden = localStorage.getItem(`hidden_chats_${currentUser.uid}`);
@@ -2310,16 +2364,7 @@
                             </div>
                             <div id="global-controls" dangerouslySetInnerHTML={{ __html: globalControlsHTML.otherControls }}></div>
                         </div>
-                        <div style={{ padding: '16px' }}>
-                             <input
-                                type="text"
-                                className="user-chat-input"
-                                style={{ borderRadius: '12px', minHeight: 'auto', maxHeight: 'none', lineHeight: '1.5' }}
-                                placeholder={language === 'it' ? 'Cerca utente per nickname...' : 'Search user by nickname...'}
-                                onInput={(e) => window.searchUsersForChat(e.target.value, currentUser.uid)}
-                                autoFocus
-                            />
-                        </div>
+                        
                         <div id="user-chat-search-results" style={{ padding: '0 16px', overflowY: 'auto', flex: 1 }}></div>
                     </div>
                 );
@@ -2344,13 +2389,18 @@
                         ))}
                         <div ref={messagesEndRef} />
                     </div>
-                    <div className="user-chat-input-container">
+                      <div className="user-chat-input-container">
                         <textarea
                             className="user-chat-input"
                             value={messageInput}
                             onChange={(e) => setMessageInput(e.target.value)}
                             onKeyDown={handleKeyPress}
                             placeholder={language === 'it' ? 'Scrivi un messaggio...' : 'Write a message...'}
+                            rows="1"
+                            onInput={(e) => {
+                                e.target.style.height = 'auto';
+                                e.target.style.height = (e.target.scrollHeight) + 'px';
+                            }}
                             disabled={isLoading}
                         />
                         <button className="user-chat-send-btn" onClick={handleSendMessage} disabled={isLoading || !messageInput.trim()}>
@@ -4555,7 +4605,7 @@
 
                 const usersHTML = limitedUsers.map(user => `
                     <div class="user-search-result" data-uid="${user.uid}">
-                        <div class="user-info">
+                        
                             <div class="user-nickname">${user.nickname}</div>
                             <div class="user-email">${user.email}</div>
                             <div class="user-suggestions-count">${user.aiSuggestions.length} ${user.aiSuggestions.length === 1 ? t.suggestion : t.suggestions}</div>
@@ -4620,16 +4670,12 @@
                     resultsContainer.innerHTML = `<div id="empty-state">${t.noUsersFound}</div>`;
                     return;
                 }
-
+                
+                // **MODIFICA APPLICATA QUI**
+                // Usiamo lo stesso stile della lista chat principale per un look pulito e coerente.
                 resultsContainer.innerHTML = users.slice(0, 10).map(user => `
-                    <div class="user-search-result">
-                        <div class="user-info">
-                            <div class="user-nickname">${user.nickname}</div>
-                        </div>
-                        <button class="chat-button" onclick="window.handleReactChatStart('${user.uid}', '${user.nickname}')">
-                            <svg xmlns="http://www.w3.org/2000/svg" height="16" viewBox="0 0 24 24" width="16" fill="currentColor"><path d="M0 0h24v24H0z" fill="none"/><path d="M20 2H4c-1.1 0-1.99.9-1.99 2L2 22l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-2 12H6v-2h12v2zm0-3H6V9h12v2zm0-3H6V6h12v2z"/></svg>
-                            ${t.startChat}
-                        </button>
+                    <div class="simple-chat-search-item" onclick="window.handleReactChatStart('${user.uid}', '${user.nickname}')">
+                        ${user.nickname}
                     </div>
                 `).join('');
 
@@ -4717,8 +4763,9 @@ const viewUserSuggestions = async (userId, userNickname) => {
                 const chatId = await getOrCreateChat(currentUser.uid, userId);
                 
                 // Navigate to user-chats view
-                currentView = 'user-chats';
-                renderView();
+                document.getElementById('user-chat-search-results')?.remove();
+currentView = 'user-chats';
+renderView();
                 
                 // If the user chat app is mounted, trigger the start chat function
                 if (window.startUserChat) {
